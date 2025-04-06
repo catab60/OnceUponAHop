@@ -1,0 +1,38 @@
+[
+    {
+        "x": 2,
+        "y": -1,
+        "z": "-4.5",
+        "color": "black",
+        "texture_id": "3",
+        "width": 4,
+        "height": 1
+    },
+    {
+        "x": -3,
+        "y": 0,
+        "z": "-4.5",
+        "color": "yellow",
+        "texture_id": "3",
+        "width": 1,
+        "height": 4
+    },
+    {
+        "x": -3,
+        "y": -3,
+        "z": "-4.5",
+        "color": "blue",
+        "texture_id": "1",
+        "width": 2,
+        "height": 2
+    },
+    {
+        "x": 1,
+        "y": 2,
+        "z": "-4.5",
+        "color": "blue",
+        "texture_id": "3",
+        "width": 3,
+        "height": 2
+    }
+]

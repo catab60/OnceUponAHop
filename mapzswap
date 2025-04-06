@@ -1,0 +1,572 @@
+import tkinter as tk
+from tkinter import ttk  # Import ttk for the combobox
+import json
+import os  # Import os to handle folder creation
+from tkinter import filedialog  # Import filedialog to open file dialog
+
+
+
+# BLACK - X AXIS KEEP WIDTH, YELLOW - Y AXIS KEEP HEIGHT
+
+
+
+# Global variables
+selected_color = "black"
+colored_cells = {}  # Dictionary to store colored cells with their coordinates and colors
+selected_z = "-4.5"  # Default Z-axis value
+selected_texture_id = "1"  # Default texture ID
+
+def on_canvas_click(event, cell_size, offset_x, offset_y):
+    """
+    Handle canvas click events to color cells and assign texture IDs.
+    """
+    # Get the scroll offsets
+    scroll_x = canvas.xview()[0] * canvas.winfo_width()
+    scroll_y = canvas.yview()[0] * canvas.winfo_height()
+
+    # Adjust the event coordinates by the scroll offsets
+    adjusted_x = event.x + scroll_x
+    adjusted_y = event.y + scroll_y
+
+    # Calculate the column and row based on the adjusted coordinates
+    col = (adjusted_x // cell_size) - offset_x
+    row = (adjusted_y // cell_size) - offset_y
+
+    # Prevent coloring the (0, 0) cell
+    if col == 0 and row == 0:
+        return
+
+    # Negate the row value to match the convention of negative y below (0, 0)
+    neg_row = -row
+
+    coords_label.config(text=f"Cell clicked: ({col}, {neg_row}, {selected_z})")  # Update the label with the clicked cell coordinates
+    print(f"Cell at ({col}, {neg_row}, {selected_z}) clicked!")
+
+    # Color the clicked cell with the selected color
+    x1 = (col + offset_x) * cell_size
+    y1 = (row + offset_y) * cell_size
+    x2 = x1 + cell_size
+    y2 = y1 + cell_size
+    canvas.create_rectangle(x1, y1, x2, y2, fill=selected_color, outline="")
+
+    # Display the texture ID on the cell
+    canvas.create_text(
+        (x1 + x2) // 2, (y1 + y2) // 2,  # Center the text in the cell
+        text=selected_texture_id,
+        fill="white" if selected_color != "white" else "black",  # Ensure text is visible
+        font=("Arial", 10, "bold")
+    )
+
+    # Store the colored cell in the dictionary with the negated row value and texture ID
+    colored_cells[(col, neg_row, selected_z)] = {
+        "color": selected_color,
+        "texture_id": selected_texture_id
+    }
+
+def set_color(color):
+    global selected_color
+    selected_color = color
+    selected_color_label.config(text=f"Selected Color: {color.capitalize()}")
+
+def set_z_axis(event):
+    global selected_z
+    selected_z = z_combobox.get()
+
+def set_texture_id(event):
+    """
+    Update the selected texture ID when the combobox value changes.
+    """
+    global selected_texture_id
+    selected_texture_id = texture_id_combobox.get()
+    texture_id_label.config(text=f"Selected Texture ID: {selected_texture_id}")
+
+
+
+def create_canvas_grid(canvas, rows, cols, cell_size):
+    # Clear the canvas before drawing a new grid
+    canvas.delete("all")
+    colored_cells.clear()  # Clear the dictionary when a new grid is created
+
+    # Update the scrollregion to match the new grid size
+    canvas.config(scrollregion=(0, 0, cols * cell_size, rows * cell_size))
+
+    # Calculate offsets to center the grid
+    offset_x = cols // 2
+    offset_y = rows // 2
+
+    # Draw grid lines
+    for i in range(rows + 1):
+        canvas.create_line(0, i * cell_size, cols * cell_size, i * cell_size, fill="black")
+    for j in range(cols + 1):
+        canvas.create_line(j * cell_size, 0, j * cell_size, rows * cell_size, fill="black")
+
+    # Color the (0, 0) cell with a unique color
+    center_x = offset_x * cell_size
+    center_y = offset_y * cell_size
+    canvas.create_rectangle(
+        center_x, center_y,
+        center_x + cell_size, center_y + cell_size,
+        fill="purple",  # Unique color for (0, 0)
+        outline=""
+    )
+
+    # Bind click event
+    canvas.bind("<Button-1>", lambda event: on_canvas_click(event, cell_size, offset_x, offset_y))
+
+def export_to_json():
+    # Ensure the "maps" folder exists
+    if not os.path.exists("maps"):
+        os.makedirs("maps")
+
+    # Get the file name from the entry
+    file_name = file_name_entry.get()
+    if not file_name.endswith(".json"):
+        file_name += ".json"
+
+    # Prepare dictionaries to group black, yellow, and blue cells
+    black_cells_grouped = {}
+    yellow_cells_grouped = {}
+    blue_cells_grouped = {}
+    other_cells = []
+
+    for (x, y, z), color in colored_cells.items():
+        if color == "black":
+            if (y, z) not in black_cells_grouped:
+                black_cells_grouped[(y, z)] = []
+            black_cells_grouped[(y, z)].append(x)
+        elif color == "yellow":
+            if (x, z) not in yellow_cells_grouped:
+                yellow_cells_grouped[(x, z)] = []
+            yellow_cells_grouped[(x, z)].append(y)
+        elif color == "blue":
+            if z not in blue_cells_grouped:
+                blue_cells_grouped[z] = []
+            blue_cells_grouped[z].append((x, y))
+        else:
+            # Add other cells with default width and height of 1
+            other_cells.append({"x": x, "y": y, "z": z, "color": color, "width": 1, "height": 1})
+
+    # Process black cells to merge adjacent ones along the x-axis
+    merged_black_cells = []
+    for (y, z), x_values in black_cells_grouped.items():
+        x_values.sort()
+        start_x = x_values[0]
+        width = 1
+
+        for i in range(1, len(x_values)):
+            if x_values[i] == x_values[i - 1] + 1:
+                width += 1
+            else:
+                merged_black_cells.append({"x": start_x, "y": y, "z": z, "color": "black", "width": width, "height": 1})
+                start_x = x_values[i]
+                width = 1
+
+        # Add the last merged segment
+        merged_black_cells.append({"x": start_x, "y": y, "z": z, "color": "black", "width": width, "height": 1})
+
+    # Process yellow cells to merge adjacent ones along the y-axis
+    merged_yellow_cells = []
+    for (x, z), y_values in yellow_cells_grouped.items():
+        y_values.sort()
+        start_y = y_values[0]
+        height = 1
+
+        for i in range(1, len(y_values)):
+            if y_values[i] == y_values[i - 1] + 1:
+                height += 1
+            else:
+                # Use the lowest y value (start_y) for the merged segment
+                merged_yellow_cells.append({"x": x, "y": start_y, "z": z, "color": "yellow", "width": 1, "height": height})
+                start_y = y_values[i]
+                height = 1
+
+        # Add the last merged segment
+        merged_yellow_cells.append({"x": x, "y": start_y, "z": z, "color": "yellow", "width": 1, "height": height})
+
+    # Process blue cells to merge both horizontally and vertically
+    merged_blue_cells = []
+    for z, coordinates in blue_cells_grouped.items():
+        coordinates.sort()
+        processed = set()
+
+        for x, y in coordinates:
+            if (x, y) in processed:
+                continue
+
+            # Start a new blue block
+            min_x, max_x = x, x
+            min_y, max_y = y, y
+
+            # Expand horizontally and vertically
+            for nx, ny in coordinates:
+                if (nx, ny) in processed:
+                    continue
+                if (nx == max_x + 1 or nx == min_x - 1) and min_y <= ny <= max_y:
+                    max_x = max(max_x, nx)
+                    min_x = min(min_x, nx)
+                elif (ny == max_y + 1 or ny == min_y - 1) and min_x <= nx <= max_x:
+                    max_y = max(max_y, ny)
+                    min_y = min(min_y, ny)
+
+            # Mark all cells in this block as processed
+            for nx in range(int(min_x), int(max_x) + 1):  # Ensure min_x and max_x are integers
+                for ny in range(int(min_y), int(max_y) + 1):  # Ensure min_y and max_y are integers
+                    processed.add((nx, ny))
+
+            # Use the lowest x and y values (min_x, min_y) for the merged blue block
+            merged_blue_cells.append({
+                "x": min_x,
+                "y": min_y,
+                "z": z,
+                "color": "blue",
+                "width": max_x - min_x + 1,
+                "height": max_y - min_y + 1
+            })
+
+    # Combine all cells
+    export_data = merged_black_cells + merged_yellow_cells + merged_blue_cells + other_cells
+
+    # Save the data to a JSON file in the "maps" folder
+    file_path = os.path.join("maps", file_name)
+    with open(file_path, "w") as json_file:
+        json.dump(export_data, json_file, indent=4)
+    print(f"Exported colored cells to '{file_path}'.")
+
+def export_to_json_with_texture():
+    """
+    Export colored cells to JSON, including the selected texture ID.
+    Swap Y and Z coordinates and set Y to 1.
+    """
+    # Ensure the "maps" folder exists
+    if not os.path.exists("maps"):
+        os.makedirs("maps")
+
+    # Get the file name from the entry
+    file_name = file_name_entry.get()
+    if not file_name.endswith(".json"):
+        file_name += ".json"
+
+    # Prepare dictionaries to group black, yellow, and blue cells
+    black_cells_grouped = {}
+    yellow_cells_grouped = {}
+    blue_cells_grouped = {}
+    other_cells = []
+
+    for (x, y, z), cell_data in colored_cells.items():
+        color = cell_data["color"]
+        texture_id = cell_data["texture_id"]
+
+        if color == "black":
+            if (y, z, texture_id) not in black_cells_grouped:
+                black_cells_grouped[(y, z, texture_id)] = []
+            black_cells_grouped[(y, z, texture_id)].append(x)
+        elif color == "yellow":
+            if (x, z, texture_id) not in yellow_cells_grouped:
+                yellow_cells_grouped[(x, z, texture_id)] = []
+            yellow_cells_grouped[(x, z, texture_id)].append(y)
+        elif color == "blue":
+            if (z, texture_id) not in blue_cells_grouped:
+                blue_cells_grouped[(z, texture_id)] = []
+            blue_cells_grouped[(z, texture_id)].append((x, y))
+        else:
+            # Add other cells with default width and height of 1
+            other_cells.append({
+                "x": x,
+                "y": 1,     # Set Y to 1
+                "z": y,      # Use Y as Z
+                "color": color,
+                "texture_id": texture_id,
+                "width": 1,
+                "height": 1
+            })
+
+    # Process black cells to merge adjacent ones along the x-axis
+    merged_black_cells = []
+    for (y, z, texture_id), x_values in black_cells_grouped.items():
+        x_values.sort()
+        start_x = x_values[0]
+        width = 1
+
+        for i in range(1, len(x_values)):
+            if x_values[i] == x_values[i - 1] + 1:
+                width += 1
+            else:
+                merged_black_cells.append({
+                    "x": start_x,
+                    "y": 1,      # Set Y to 1
+                    "z": y,       # Use original Y as Z
+                    "color": "black",
+                    "texture_id": texture_id,
+                    "width": width,
+                    "height": 1
+                })
+                start_x = x_values[i]
+                width = 1
+
+        # Add the last merged segment
+        merged_black_cells.append({
+            "x": start_x,
+            "y": 1,      # Set Y to 1
+            "z": y,       # Use original Y as Z
+            "color": "black",
+            "texture_id": texture_id,
+            "width": width,
+            "height": 1
+        })
+
+    # Process yellow cells to merge adjacent ones along the y-axis
+    merged_yellow_cells = []
+    for (x, z, texture_id), y_values in yellow_cells_grouped.items():
+        y_values.sort()
+        start_y = y_values[0]
+        height = 1
+
+        for i in range(1, len(y_values)):
+            if y_values[i] == y_values[i - 1] + 1:
+                height += 1
+            else:
+                merged_yellow_cells.append({
+                    "x": x,
+                    "y": 1,      # Set Y to 1
+                    "z": start_y, # Use original Y as Z
+                    "color": "yellow",
+                    "texture_id": texture_id,
+                    "width": 1,
+                    "height": height
+                })
+                start_y = y_values[i]
+                height = 1
+
+        # Add the last merged segment
+        merged_yellow_cells.append({
+            "x": x,
+            "y": 1,      # Set Y to 1
+            "z": start_y, # Use original Y as Z
+            "color": "yellow",
+            "texture_id": texture_id,
+            "width": 1,
+            "height": height
+        })
+
+    # Process blue cells to merge both horizontally and vertically
+    merged_blue_cells = []
+    for (z, texture_id), coordinates in blue_cells_grouped.items():
+        coordinates.sort()
+        processed = set()
+
+        for x, y in coordinates:
+            if (x, y) in processed:
+                continue
+
+            # Start a new blue block
+            min_x, max_x = x, x
+            min_y, max_y = y, y
+
+            # Expand horizontally and vertically
+            for nx, ny in coordinates:
+                if (nx, ny) in processed:
+                    continue
+                if (nx == max_x + 1 or nx == min_x - 1) and min_y <= ny <= max_y:
+                    max_x = max(max_x, nx)
+                    min_x = min(min_x, nx)
+                elif (ny == max_y + 1 or ny == min_y - 1) and min_x <= nx <= max_x:
+                    max_y = max(max_y, ny)
+                    min_y = min(min_y, ny)
+
+            # Mark all cells in this block as processed
+            for nx in range(int(min_x), int(max_x) + 1):
+                for ny in range(int(min_y), int(max_y) + 1):
+                    processed.add((nx, ny))
+
+            # Use the lowest x and y values (min_x, min_y) for the merged blue block
+            merged_blue_cells.append({
+                "x": min_x,
+                "y": 1,      # Set Y to 1
+                "z": min_y,   # Use original Y as Z
+                "color": "blue",
+                "texture_id": texture_id,
+                "width": max_x - min_x + 1,
+                "height": max_y - min_y + 1
+            })
+
+    # Combine all cells
+    export_data = merged_black_cells + merged_yellow_cells + merged_blue_cells + other_cells
+
+    # Save the data to a JSON file in the "maps" folder
+    file_path = os.path.join("maps", file_name)
+    with open(file_path, "w") as json_file:
+        json.dump(export_data, json_file, indent=4)
+    print(f"Exported colored cells with texture IDs to '{file_path}'. Y swapped with Z and set to 1.")
+
+def load_from_json():
+    # Open a file dialog to select the JSON file
+    file_path = filedialog.askopenfilename(
+        title="Select JSON File",
+        filetypes=(("JSON Files", "*.json"), ("All Files", "*.*"))
+    )
+    if not file_path:
+        return  # If no file is selected, exit the function
+
+    try:
+        # Read and parse the JSON file
+        with open(file_path, "r") as json_file:
+            data = json.load(json_file)
+
+        # Ensure rows and columns entries are not empty
+        if not rows_entry.get() or not cols_entry.get():
+            print("Rows and columns must be specified before loading a JSON file.")
+            return
+
+        # Clear the canvas and reset the colored_cells dictionary
+        canvas.delete("all")
+        colored_cells.clear()
+
+        # Redraw the grid
+        rows = int(rows_entry.get())
+        cols = int(cols_entry.get())
+        cell_size = 20  # Assuming a fixed cell size
+        create_canvas_grid(canvas, rows, cols, cell_size)
+
+        # Calculate offsets to center the grid
+        offset_x = cols // 2
+        offset_y = rows // 2
+
+        # Iterate through the loaded data and draw the cells
+        for cell in data:
+            x = cell["x"]
+            y = cell["y"]
+            z = cell["z"]
+            color = cell["color"]
+            texture_id = cell.get("texture_id", "1")  # Default texture ID if not present
+            width = cell.get("width", 1)
+            height = cell.get("height", 1)
+
+            # Calculate the rectangle coordinates
+            x1 = (x + offset_x) * cell_size
+            y1 = ((-y + offset_y) - height + 1) * cell_size  # Adjust for height to align correctly
+            x2 = x1 + width * cell_size
+            y2 = y1 + height * cell_size
+
+            # Draw the rectangle on the canvas
+            canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="")
+
+            # Display the texture ID on the cell
+            canvas.create_text(
+                (x1 + x2) // 2, (y1 + y2) // 2,  # Center the text in the cell
+                text=texture_id,
+                fill="white" if color != "white" else "black",  # Ensure text is visible
+                font=("Arial", 10, "bold")
+            )
+
+            # Update the colored_cells dictionary
+            for dx in range(width):
+                for dy in range(height):
+                    colored_cells[(x + dx, y - dy, z)] = {
+                        "color": color,
+                        "texture_id": texture_id
+                    }
+
+        print(f"Loaded data from '{file_path}' and displayed it on the canvas.")
+    except Exception as e:
+        print(f"Error loading JSON file: {e}")
+
+def generate_grid():
+    try:
+        rows = int(rows_entry.get())
+        cols = int(cols_entry.get())
+        if rows <= 0 or cols <= 0:
+            raise ValueError("Rows and columns must be positive integers.")
+        create_canvas_grid(canvas, rows, cols, cell_size=20)
+    except ValueError as e:
+        print(f"Invalid input: {e}")
+
+def main():
+    global root, rows_entry, cols_entry, canvas, coords_label, selected_color_label, file_name_entry, z_combobox
+    global texture_id_combobox, texture_id_label, texture_button, selected_texture_id
+
+    root = tk.Tk()
+    root.title("Dynamic Grid Generator")
+
+    # Input fields for rows and columns
+    tk.Label(root, text="Enter number of rows (x):").pack()
+    rows_entry = tk.Entry(root)
+    rows_entry.pack()
+
+    tk.Label(root, text="Enter number of columns (y):").pack()
+    cols_entry = tk.Entry(root)
+    cols_entry.pack()
+
+    # Color selection buttons
+    tk.Label(root, text="Select a color:").pack()
+    color_frame = tk.Frame(root)
+    color_frame.pack()
+
+    colors = ["red", "blue", "yellow", "green", "black"]
+    for color in colors:
+        tk.Button(color_frame, bg=color, width=5, command=lambda c=color: set_color(c)).pack(side=tk.LEFT)
+
+    # Label to display the selected color
+    selected_color_label = tk.Label(root, text="Selected Color: Black")
+    selected_color_label.pack()
+
+    # Entry for JSON file name
+    tk.Label(root, text="Enter JSON file name:").pack()
+    file_name_entry = tk.Entry(root)
+    file_name_entry.insert(0, "colored_cells")  # Default file name
+    file_name_entry.pack()
+
+    # Combobox for Z-axis selection
+    tk.Label(root, text="Select Z-axis:").pack()
+    z_combobox = ttk.Combobox(root, values=["-4.5", "-5.5", "-6.5"])
+    z_combobox.current(0)  # Set default value
+    z_combobox.bind("<<ComboboxSelected>>", set_z_axis)
+    z_combobox.pack()
+
+    # Combobox for Texture ID selection
+    tk.Label(root, text="Select Texture ID:").pack()
+    texture_id_combobox = ttk.Combobox(root, values=[str(i) for i in range(1, 11)])
+    texture_id_combobox.current(0)  # Set default value to 1
+    texture_id_combobox.bind("<<ComboboxSelected>>", set_texture_id)
+    texture_id_combobox.pack()
+
+    # Label to display the selected texture ID
+    texture_id_label = tk.Label(root, text="Selected Texture ID: 1")
+    texture_id_label.pack()
+
+    # Button to display the selected texture ID
+    
+
+    # Button to generate the grid
+    tk.Button(root, text="Generate Grid", command=generate_grid).pack()
+
+    # Label to display clicked cell coordinates
+    coords_label = tk.Label(root, text="Cell clicked: None")
+    coords_label.pack()
+
+    # Button to export colored cells to JSON
+    tk.Button(root, text="Export to JSON", command=export_to_json_with_texture).pack()
+
+    # Button to load colored cells from JSON
+    tk.Button(root, text="Load from JSON", command=load_from_json).pack()
+
+    # Create a canvas with scrollbars
+    frame = tk.Frame(root)
+    frame.pack(fill=tk.BOTH, expand=True)
+
+    canvas = tk.Canvas(frame, bg="white")
+    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+    # Add vertical scrollbar
+    v_scroll = tk.Scrollbar(frame, orient=tk.VERTICAL, command=canvas.yview)
+    v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
+    canvas.config(yscrollcommand=v_scroll.set)
+
+    # Add horizontal scrollbar
+    h_scroll = tk.Scrollbar(frame, orient=tk.HORIZONTAL, command=canvas.xview)
+    h_scroll.pack(side=tk.BOTTOM, fill=tk.X)
+    canvas.config(xscrollcommand=h_scroll.set)
+
+    root.mainloop()
+
+if __name__ == "__main__":
+    main()

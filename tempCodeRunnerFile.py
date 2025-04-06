@@ -1,0 +1,1 @@
+wife_FANCY_NPC

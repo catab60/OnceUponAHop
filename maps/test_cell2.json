@@ -1,0 +1,236 @@
+[
+    {
+        "x": -8.0,
+        "y": 1,
+        "z": -5.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 1.0,
+        "height": 9.0
+    },
+    {
+        "x": -7.0,
+        "y": 1,
+        "z": -6.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 1.0,
+        "height": 1.0
+    },
+    {
+        "x": -7.0,
+        "y": 1,
+        "z": 4.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 1.0,
+        "height": 1.0
+    },
+    {
+        "x": -6.0,
+        "y": 1,
+        "z": -7.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 1.0,
+        "height": 1.0
+    },
+    {
+        "x": -6.0,
+        "y": 1,
+        "z": 5.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 1.0,
+        "height": 1.0
+    },
+    {
+        "x": -5.0,
+        "y": 1,
+        "z": -8.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 1.0,
+        "height": 1.0
+    },
+    {
+        "x": -5.0,
+        "y": 1,
+        "z": 6.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 1.0,
+        "height": 1.0
+    },
+    {
+        "x": -4.0,
+        "y": 1,
+        "z": -9.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 9.0,
+        "height": 1.0
+    },
+    {
+        "x": -4.0,
+        "y": 1,
+        "z": 7.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 9.0,
+        "height": 1.0
+    },
+    {
+        "x": 5.0,
+        "y": 1,
+        "z": -8.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 1.0,
+        "height": 1.0
+    },
+    {
+        "x": 5.0,
+        "y": 1,
+        "z": 6.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 1.0,
+        "height": 1.0
+    },
+    {
+        "x": 6.0,
+        "y": 1,
+        "z": -7.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 1.0,
+        "height": 1.0
+    },
+    {
+        "x": 6.0,
+        "y": 1,
+        "z": 5.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 1.0,
+        "height": 1.0
+    },
+    {
+        "x": 7.0,
+        "y": 1,
+        "z": -6.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 1.0,
+        "height": 1.0
+    },
+    {
+        "x": 7.0,
+        "y": 1,
+        "z": 4.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 1.0,
+        "height": 1.0
+    },
+    {
+        "x": 8.0,
+        "y": 1,
+        "z": -5.0,
+        "color": "blue",
+        "texture_id": "1",
+        "width": 1.0,
+        "height": 9.0
+    },
+    {
+        "x": -3.0,
+        "y": 1,
+        "z": 4.0,
+        "color": "red",
+        "texture_id": "1",
+        "width": 1,
+        "height": 1
+    },
+    {
+        "x": -2.0,
+        "y": 1,
+        "z": 5.0,
+        "color": "red",
+        "texture_id": "1",
+        "width": 1,
+        "height": 1
+    },
+    {
+        "x": -1.0,
+        "y": 1,
+        "z": 5.0,
+        "color": "red",
+        "texture_id": "1",
+        "width": 1,
+        "height": 1
+    },
+    {
+        "x": 0.0,
+        "y": 1,
+        "z": 5.0,
+        "color": "red",
+        "texture_id": "1",
+        "width": 1,
+        "height": 1
+    },
+    {
+        "x": 1.0,
+        "y": 1,
+        "z": 5.0,
+        "color": "red",
+        "texture_id": "1",
+        "width": 1,
+        "height": 1
+    },
+    {
+        "x": -7.0,
+        "y": 1,
+        "z": 3.0,
+        "color": "red",
+        "texture_id": "1",
+        "width": 1,
+        "height": 1
+    },
+    {
+        "x": -7.0,
+        "y": 1,
+        "z": 2.0,
+        "color": "red",
+        "texture_id": "1",
+        "width": 1,
+        "height": 1
+    },
+    {
+        "x": -7.0,
+        "y": 1,
+        "z": 1.0,
+        "color": "red",
+        "texture_id": "1",
+        "width": 1,
+        "height": 1
+    },
+    {
+        "x": -7.0,
+        "y": 1,
+        "z": -0.0,
+        "color": "red",
+        "texture_id": "1",
+        "width": 1,
+        "height": 1
+    },
+    {
+        "x": 8.0,
+        "y": 1,
+        "z": -6.0,
+        "color": "red",
+        "texture_id": "1",
+        "width": 1,
+        "height": 1
+    }
+]
