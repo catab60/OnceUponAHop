@@ -6,7 +6,14 @@
 
 ## iTEC 2025 WINNER (18th edition)
 
-Trailer - coming soon!
+---
+<div align="center">
+
+## Trailer
+
+[![TRAILER](https://img.youtube.com/vi/DyaW1sJbak4/0.jpg)](https://www.youtube.com/watch?v=DyaW1sJbak4)
+
+</div>
 
 ---
 
